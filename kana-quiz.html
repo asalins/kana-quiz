@@ -2,6 +2,7 @@
 <html lang="th"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ฝึกฮิรางานะ & คาตาคานะ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One&family=Noto+Sans+JP&family=Noto+Serif+JP&family=Yuji+Syuku&family=Kosugi+Maru&display=swap">
 <style>
 :root{--bg:#f4f6f8;--fg:#1c2530;--card:#fff;--ok:#4cd11f;--pend:#1f78c1;--bad:#e5484d;--mut:#6b7785;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--fg:#e8edf2;--card:#1d242c;--mut:#93a0ad}}
@@ -20,18 +21,21 @@ button,.chip{font:inherit;border:1px solid #8884;background:var(--card);color:va
 .prog i{display:block;height:100%;width:0;background:var(--ok);transition:width .2s}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px}
 .k{background:var(--pend);border-radius:12px;padding:6px 6px 8px;text-align:center;color:#fff;transition:background .15s}
-.k .c{font-size:34px;line-height:1.3}
+.k .c{font-size:34px;line-height:1.3;font-family:var(--kf,"Klee One"),sans-serif}
 .k input{width:100%;border:0;border-radius:6px;text-align:center;font:inherit;font-size:16px;padding:4px 0;background:#fff;color:#111;outline:none}
 .k.ok{background:var(--ok)}
 .k.ok input{background:#fff8;color:#333}
 .k.bad{animation:sh .3s;background:var(--bad)}
 @keyframes sh{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .res{display:none;margin:14px 0;padding:14px;border-radius:12px;background:var(--card);text-align:center}
+select{font:inherit;color:var(--fg);background:var(--card);border:1px solid #8886;border-radius:999px;padding:7px 12px}
 </style></head><body><div class="wrap">
 <h1>🇯🇵 ฝึกฮิรางานะ & คาตาคานะ</h1>
 <div class="bar" id="mode"></div>
 <div class="bar">
+<select id="ff"></select>
 <span class="chip" id="dk">+ ตัวเติม ゛゜ (dakuten)</span>
+<span class="chip" id="yo">+ เสียงควบ ゃゅょ (yōon)</span>
 <button id="rs">🔀 เริ่มใหม่ / สลับ</button>
 <button id="gv">💡 เฉลย</button>
 </div>
@@ -39,25 +43,34 @@ button,.chip{font:inherit;border:1px solid #8884;background:var(--card);color:va
 <div class="prog"><i id="pg"></i></div>
 <div class="res" id="res"></div>
 <div class="grid" id="g"></div>
-<p style="color:var(--mut);font-size:13px">พิมพ์ตัวอ่านโรมาจิ เช่น ka, shi (รับ si/ti/tu/hu ด้วย) — ถูกแล้วจะเป็นสีเขียวและเลื่อนช่องถัดไปอัตโนมัติ</p>
+<p style="color:var(--mut);font-size:13px">พิมพ์ตัวอ่านโรมาจิ เช่น ka, shi, kya (รับการสะกดหลายแบบ เช่น si/ti/tu/hu/sya) — ถูกแล้วจะเป็นสีเขียวและเลื่อนช่องถัดไปอัตโนมัติ<br>เปิด "เสียงควบ ゃゅょ" เพื่อฝึกเสียงผสม เช่น きゃ しゅ ちょ — เปิดคู่กับ "ตัวเติม ゛゜" เพื่อรวม ぎゃ じゅ びょ ปゃ ด้วย</p>
 </div>
 <script>
 const H="あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん".split("");
 const R="a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa wo n".split(" ");
 const HD="がぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ".split("");
 const RD="ga gi gu ge go za ji zu ze zo da ji zu de do ba bi bu be bo pa pi pu pe po".split(" ");
-const AL={shi:["si"],chi:["ti"],tsu:["tu"],fu:["hu"],ji:["zi","di"],zu:["du"],wo:["o"]};
+const YO="きゃ きゅ きょ しゃ しゅ しょ ちゃ ちゅ ちょ にゃ にゅ にょ ひゃ ひゅ ひょ みゃ みゅ みょ りゃ りゅ りょ".split(" ");
+const RYO="kya kyu kyo sha shu sho cha chu cho nya nyu nyo hya hyu hyo mya myu myo rya ryu ryo".split(" ");
+const YD="ぎゃ ぎゅ ぎょ じゃ じゅ じょ びゃ びゅ びょ ぴゃ ぴゅ ぴょ".split(" ");
+const RYD="gya gyu gyo ja ju jo bya byu byo pya pyu pyo".split(" ");
+const AL={shi:["si"],chi:["ti"],tsu:["tu"],fu:["hu"],ji:["zi","di"],zu:["du"],wo:["o"],
+  sha:["sya"],shu:["syu"],sho:["syo"],cha:["tya"],chu:["tyu"],cho:["tyo"],ja:["zya","dya"],ju:["zyu","dyu"],jo:["zyo","dyo"]};
 const kt=s=>String.fromCharCode(s.charCodeAt(0)+0x60);
-let m="h",dk=false,items=[],t0=0,tick=null,done=0,err=0;
+const ktc=s=>[...s].map(kt).join("");
+let m="h",dk=false,yo=false,items=[],t0=0,tick=null,done=0,err=0;
 const $=id=>document.getElementById(id);
 const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
-function best(){try{return localStorage.getItem("kbest")}catch(e){return null}}
+function bkey(){return "kbest_"+m+(dk?"d":"")+(yo?"y":"")}
+function best(){try{return localStorage.getItem(bkey())}catch(e){return null}}
 function build(){
   let a=H.map((c,i)=>[c,R[i]]);
   if(dk)a=a.concat(HD.map((c,i)=>[c,RD[i]]));
+  if(yo)a=a.concat(YO.map((c,i)=>[c,RYO[i]]));
+  if(yo&&dk)a=a.concat(YD.map((c,i)=>[c,RYD[i]]));
   let o=[];
   if(m!="k")o=o.concat(a.map(x=>[x[0],x[1]]));
-  if(m!="h")o=o.concat(a.map(x=>[kt(x[0]),x[1]]));
+  if(m!="h")o=o.concat(a.map(x=>[x[0].length>1?ktc(x[0]):kt(x[0]),x[1]]));
   for(let i=o.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[o[i],o[j]]=[o[j],o[i]]}
   items=o;done=0;err=0;clearInterval(tick);tick=null;t0=0;
   $("tm").textContent="0:00";$("er").textContent=0;$("res").style.display="none";
@@ -65,7 +78,7 @@ function build(){
   const g=$("g");g.innerHTML="";
   items.forEach(([c,r],i)=>{
     const d=document.createElement("div");d.className="k";
-    d.innerHTML='<div class="c">'+c+'</div><input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">';
+    d.innerHTML='<div class="c"'+(c.length>1?' style="font-size:26px"':'')+'>'+c+'</div><input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">';
     const inp=d.querySelector("input");
     inp.addEventListener("input",()=>chk(d,inp,r));
     g.appendChild(d);
@@ -95,7 +108,7 @@ function upd(){
 function finish(){
   clearInterval(tick);tick=null;
   const s=(Date.now()-t0)/1000|0;let msg="";
-  if(items.length>=46){try{const b=+localStorage.getItem("kbest");if(!b||s<b){localStorage.setItem("kbest",s);msg=" 🏆 สถิติใหม่!"}}catch(e){}}
+  try{const b=+localStorage.getItem(bkey());if(!b||s<b){localStorage.setItem(bkey(),s);msg=" 🏆 สถิติใหม่!"}}catch(e){}
   $("bt").textContent=best()?fmt(+best()):"-";
   const r=$("res");r.style.display="block";
   r.innerHTML="🎉 ครบแล้ว! ใช้เวลา <b>"+fmt(s)+"</b> · ผิด <b>"+err+"</b> ครั้ง"+msg;
@@ -109,10 +122,19 @@ $("gv").onclick=()=>{
 };
 $("rs").onclick=build;
 $("dk").onclick=()=>{dk=!dk;$("dk").classList.toggle("on",dk);build()};
+$("yo").onclick=()=>{yo=!yo;$("yo").classList.toggle("on",yo);build()};
 [["h","ひらがな"],["k","カタカナ"],["b","ผสมทั้งคู่"]].forEach(([k,l])=>{
   const b=document.createElement("span");b.className="chip"+(k==m?" on":"");b.textContent=l;
   b.onclick=()=>{m=k;document.querySelectorAll("#mode .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");build()};
   $("mode").appendChild(b);
 });
+const FF=["Klee One","Noto Sans JP","Noto Serif JP","Yuji Syuku","Kosugi Maru"];
+(function(){const s=document.getElementById("ff");
+FF.forEach(f=>{const o=document.createElement("option");o.value=f;o.textContent="ฟอนต์: "+f;s.appendChild(o)});
+let v=FF[0];try{v=localStorage.getItem("kfont")||v}catch(e){}
+if(!FF.includes(v))v=FF[0];
+const ap=f=>document.documentElement.style.setProperty("--kf",'"'+f+'",sans-serif');
+s.value=v;ap(v);
+s.onchange=()=>{ap(s.value);try{localStorage.setItem("kfont",s.value)}catch(e){}}})();
 build();
 </script></body></html>

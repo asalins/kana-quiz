@@ -29,14 +29,16 @@ button,.chip{font:inherit;border:1px solid #8884;background:var(--card);color:va
 @keyframes sh{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .res{display:none;margin:14px 0;padding:14px;border-radius:12px;background:var(--card);text-align:center}
 select{font:inherit;color:var(--fg);background:var(--card);border:1px solid #8886;border-radius:999px;padding:7px 12px}
-</style></head><body><div class="wrap">
-<h1>🇯🇵 ฝึกฮิรางานะ & คาตาคานะ</h1>
+textarea{width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--card);border:1px solid #8886;border-radius:12px;padding:10px}.o{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;margin-top:8px;background:var(--card);border-radius:12px}.o b{font-size:24px;font-family:var(--kf,"Klee One"),sans-serif}</style></head><body><div class="wrap">
+<h1>🇯🇵 ฝึกฮิรางานะ & คาตาคานะ</h1><div class="bar"><span class="chip on" id="t1">🎯 ฝึกอ่านคานะ</span><span class="chip" id="t2">✍️ สะกดเป็นคาตาคานะ</span></div><div id="quiz">
 <div class="bar" id="mode"></div>
 <div class="bar">
 <select id="ff"></select>
 <span class="chip on" id="se">เสียงใส あ・か・さ</span>
 <span class="chip" id="dk">เสียงขุ่น が・ざ・ぱ</span>
 <span class="chip" id="yo">เสียงควบ きゃ・しゅ</span>
+<span class="chip" id="sk">เสียงกัก っ</span>
+<span class="chip" id="lg">เสียงยาว ー</span>
 <button id="rs">🔀 เริ่มใหม่ / สลับ</button>
 <button id="gv">💡 เฉลย</button>
 </div>
@@ -44,8 +46,10 @@ select{font:inherit;color:var(--fg);background:var(--card);border:1px solid #888
 <div class="prog"><i id="pg"></i></div>
 <div class="res" id="res"></div>
 <div class="grid" id="g"></div>
-<p style="color:var(--mut);font-size:13px">พิมพ์ตัวอ่านโรมาจิ เช่น ka, shi, kya (รับการสะกดหลายแบบ เช่น si/ti/tu/hu/sya) — ถูกแล้วจะเป็นสีเขียวและเลื่อนช่องถัดไปอัตโนมัติ<br>เลือกได้หลายปุ่มพร้อมกัน: "เสียงใส" คือ あ-ん พื้นฐาน, "เสียงขุ่น" คือ が ざ だ ば ぱ, "เสียงควบ" คือ きゃ しゅ ちょ — เปิด เสียงขุ่น+เสียงควบ พร้อมกันจะได้ ぎゃ じゅ びょ ぴゃ เพิ่มด้วย</p>
-</div>
+<p style="color:var(--mut);font-size:13px">พิมพ์ตัวอ่านโรมาจิ เช่น ka, shi, kya (รับการสะกดหลายแบบ เช่น si/ti/tu/hu/sya) — ถูกแล้วจะเป็นสีเขียวและเลื่อนช่องถัดไปอัตโนมัติ<br>เลือกได้หลายปุ่มพร้อมกัน: "เสียงใส" คือ あ-ん พื้นฐาน, "เสียงขุ่น" คือ が ざ だ ば ぱ, "เสียงควบ" คือ きゃ しゅ ちょ — เปิด เสียงขุ่น+เสียงควบ พร้อมกันจะได้ ぎゃ じゅ びょ ぴゃ เพิ่มด้วย<br>เสียงกัก っ: พิมพ์พยัญชนะซ้อน เช่น kka, sshi, tchi · เสียงยาว: พิมพ์สระซ้ำ เช่น kaa, shii, kee/kei, koo/kou (ฮิรางานะเติม あいうえお ส่วนคาตาคานะใช้ ー)</p></div>
+<div id="cv" style="display:none"><p style="color:var(--mut);font-size:14px">พิมพ์ชื่อหรือคำภาษาไทย / อังกฤษ (เว้นวรรค = แยกคำ) ระบบจะสะกดเป็นคาตาคานะตามหลักในเอกสาร: พยัญชนะท้ายเติม ウ/オ/イ, แม่กก/กด/กบ → ック/ット/ップ, แม่กง/กน → ン, แม่กม → ム, สระยาว → ー</p>
+<textarea id="ci" rows="3" placeholder="เช่น สมชาย  กรกช  coffee  London  Somchai"></textarea><div id="co"></div>
+<p style="color:var(--mut);font-size:13px">⚠️ เป็นการประมาณด้วยกฎ: ชื่อไทยที่อ่านพิเศษ (บาลี-สันสกฤต) หรือคำอังกฤษนอกตัวอย่างในเอกสาร อาจต้องตรวจเทียบอีกที</p></div>
 <script>
 const H="あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん".split("");
 const R="a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa wo n".split(" ");
@@ -59,10 +63,13 @@ const AL={shi:["si"],chi:["ti"],tsu:["tu"],fu:["hu"],ji:["zi","di"],zu:["du"],wo
   sha:["sya"],shu:["syu"],sho:["syo"],cha:["tya"],chu:["tyu"],cho:["tyo"],ja:["zya","dya"],ju:["zyu","dyu"],jo:["zyo","dyo"]};
 const kt=s=>String.fromCharCode(s.charCodeAt(0)+0x60);
 const ktc=s=>[...s].map(kt).join("");
-let m="h",se=true,dk=false,yo=false,items=[],t0=0,tick=null,done=0,err=0;
+const SK=[],LG=[];
+[["かきくけこ","ka ki ku ke ko"],["さしすせそ","sa shi su se so"],["たちつてと","ta chi tsu te to"],["ぱぴぷぺぽ","pa pi pu pe po"]].forEach(([h,r])=>[...h].forEach((c,i)=>{const x=r.split(" ")[i],y=(x[0]=="c"?"t":x[0])+x;AL[y]=(AL[x]||[]).map(a=>a[0]+a);if(x=="chi")AL[y].push("cchi");SK.push(["っ"+c,y])}));
+H.forEach((c,i)=>{const r=R[i];if(r=="n"||r=="wo")return;const v=r.slice(-1),y=r+v;AL[y]=(AL[r]||[]).map(a=>a+v);if(v=="e")AL[y].push(r+"i");if(v=="o")AL[y].push(r+"u");LG.push([c+"あいういう"["aiueo".indexOf(v)],y,kt(c)+"ー"])});
+let m="h",se=true,dk=false,yo=false,sk=false,lg=false,items=[],t0=0,tick=null,done=0,err=0;
 const $=id=>document.getElementById(id);
 const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
-function bkey(){return "kbest_"+m+(se?"s":"")+(dk?"d":"")+(yo?"y":"")}
+function bkey(){return "kbest_"+m+(se?"s":"")+(dk?"d":"")+(yo?"y":"")+(sk?"q":"")+(lg?"l":"")}
 function best(){try{return localStorage.getItem(bkey())}catch(e){return null}}
 function build(){
   let a=[];
@@ -70,9 +77,9 @@ function build(){
   if(dk)a=a.concat(HD.map((c,i)=>[c,RD[i]]));
   if(yo)a=a.concat(YO.map((c,i)=>[c,RYO[i]]));
   if(yo&&dk)a=a.concat(YD.map((c,i)=>[c,RYD[i]]));
-  let o=[];
+  if(sk)a=a.concat(SK);if(lg)a=a.concat(LG);let o=[];
   if(m!="k")o=o.concat(a.map(x=>[x[0],x[1]]));
-  if(m!="h")o=o.concat(a.map(x=>[x[0].length>1?ktc(x[0]):kt(x[0]),x[1]]));
+  if(m!="h")o=o.concat(a.map(x=>[x[2]||ktc(x[0]),x[1]]));
   for(let i=o.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[o[i],o[j]]=[o[j],o[i]]}
   items=o;done=0;err=0;clearInterval(tick);tick=null;t0=0;
   $("tm").textContent="0:00";$("er").textContent=0;$("res").style.display="none";
@@ -123,10 +130,12 @@ $("gv").onclick=()=>{
   });clearInterval(tick);tick=null;
 };
 $("rs").onclick=build;
-function ensureOne(){if(!se&&!dk&&!yo){se=true;$("se").classList.add("on")}}
+function ensureOne(){if(!se&&!dk&&!yo&&!sk&&!lg){se=true;$("se").classList.add("on")}}
 $("se").onclick=()=>{se=!se;ensureOne();$("se").classList.toggle("on",se);build()};
 $("dk").onclick=()=>{dk=!dk;ensureOne();$("dk").classList.toggle("on",dk);build()};
 $("yo").onclick=()=>{yo=!yo;ensureOne();$("yo").classList.toggle("on",yo);build()};
+$("sk").onclick=()=>{sk=!sk;ensureOne();$("sk").classList.toggle("on",sk);build()};
+$("lg").onclick=()=>{lg=!lg;ensureOne();$("lg").classList.toggle("on",lg);build()};
 [["h","ひらがな"],["k","カタカナ"],["b","ผสมทั้งคู่"]].forEach(([k,l])=>{
   const b=document.createElement("span");b.className="chip"+(k==m?" on":"");b.textContent=l;
   b.onclick=()=>{m=k;document.querySelectorAll("#mode .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");build()};
@@ -140,5 +149,79 @@ if(!FF.includes(v))v=FF[0];
 const ap=f=>document.documentElement.style.setProperty("--kf",'"'+f+'",sans-serif');
 s.value=v;ap(v);
 s.onchange=()=>{ap(s.value);try{localStorage.setItem("kfont",s.value)}catch(e){}}})();
+
+/* ===== converter ===== */
+const D={};R.forEach((r,i)=>D[r]=kt(H[i]));RD.forEach((r,i)=>D[r]=D[r]||kt(HD[i]));
+RYO.forEach((r,i)=>D[r]=ktc(YO[i]));RYD.forEach((r,i)=>D[r]=ktc(YD[i]));
+Object.assign(D,{si:"スィ",ti:"ティ",tu:"トゥ",di:"ディ",du:"ドゥ",hu:"フ",fa:"ファ",fi:"フィ",fe:"フェ",fo:"フォ",wi:"ウィ",we:"ウェ",wo:"ウォ",wu:"ウ",che:"チェ",she:"シェ",je:"ジェ",yi:"イ",ch:"チ",sh:"シュ",j:"ジ"});
+const mk=(t,o)=>t.split(" ").forEach(x=>{const[a,b]=x.split(":");[...b].forEach(c=>o[c]=a)});
+const TI={},TF={};
+mk("k:กขคฆ g:ง ch:จชฉฌ s:ซศษส d:ฎด t:ฏฐฑฒตถทธ n:ณน h:หฮ f:ฝฟ b:บ p:ปผพภ m:ม y:ญย r:รลฬฤ w:ว :อ",TI);
+mk("K:กขคฆ T:จชฉฌซศษสฎฏฐฑฒดตถทธ P:บปพฟภผ N:งญณนรลฬ M:ม i:ย u:ว",TF);
+function K(s){let o="",lv="",i=0;
+ while(i<s.length){const c=s[i];
+  if(c=="'"){lv="";i++;continue}
+  if(c==lv){o+="ー";lv="";i++;continue}
+  lv="";
+  if("KTP".includes(c)){o+=(o.slice(-1)=="ー"?"":"ッ")+{K:"ク",T:"ト",P:"プ"}[c];i++;continue}
+  if(c=="N"||c=="M"){o+=c=="N"?"ン":"ム";i++;continue}
+  if(c==s[i+1]&&/[ksthpbdgjfrcz]/.test(c)){o+="ッ";i++;continue}
+  let h=0;
+  for(let l=3;l>0&&!h;l--){const k=s.substr(i,l);if(D[k]){o+=D[k];const e=k.slice(-1);lv="aiueo".includes(e)?e:"";i+=l;h=1}}
+  if(!h){o+=D[c+("td".includes(c)?"o":"u")]||"";i++}
+ }return o}
+function th(s){
+ s=s.replace(/[\u0e48-\u0e4b\u0e46\u0e2f]/g,"").replace(/[ก-ฮ][\u0e31\u0e34-\u0e3a\u0e47]*\u0e4c/g,"");
+ const isC=c=>!!c&&c>="ก"&&c<="ฮ",VM=/[ะัาำิีึืุู็]/,LD="เแโไใ";
+ let i=0,o="";
+ while(i<s.length){
+  let L="",c=s[i];
+  if(LD.includes(c)){L=c;c=s[++i]}
+  if(!isC(c)){i++;continue}
+  i++;let ini=TI[c],n=s[i]||"",v="",fin="",bare=0;
+  if(c=="ห"&&isC(n)&&"งญนมยรลว".includes(n)&&VM.test(s[i+1]||"")){ini=TI[n];c=n;i++;n=s[i]||""}
+  if(n&&"รลว".includes(n)&&"กขคตปผพ".includes(c)&&(n!="ว"||"กขค".includes(c))&&(L||VM.test(s[i+1]||""))){ini+=(c=="ต"?"o":"u")+TI[n];i++;n=s[i]||""}
+  if(L=="เ"){
+   if(n=="ี"&&s[i+1]=="ย"){v="ia";i+=2}
+   else if(n=="ื"&&s[i+1]=="อ"){v="uu";i+=2}
+   else if(n=="ิ"||n=="อ"){v="uu";i++}
+   else if(n=="ะ"||n=="็"){v="e";i++}
+   else if(n=="า"){v="ao";i++}
+   else v="ee"
+  }else if(L=="แ"){v="ee";if(n=="ะ"||n=="็"){v="e";i++}}
+  else if(L=="โ"){v="oo";if(n=="ะ"){v="o";i++}}
+  else if(L){v="ai"}
+  else if(n=="ั"){if(s[i+1]=="ว"){v="ua";i+=2}else{v="a";i++}}
+  else if(n=="ร"&&s[i+1]=="ร"){v="a";i+=2}
+  else if(n=="า"||n=="ะ"){v=n=="า"?"aa":"a";i++}
+  else if(n=="ำ"){v="a";fin="M";i++}
+  else if(n&&"ิีึุ".includes(n)){v={"ิ":"i","ี":"ii","ึ":"u","ุ":"u"}[n];i++}
+  else if(n=="ื"||n=="ู"){v="uu";i++;if(n=="ื"&&s[i]=="อ")i++}
+  else if(n=="อ"){v="oo";i++}
+  else{bare=1;v="o"}
+  const f=s[i];
+  if(!fin&&bare){const g=s[i+1],h=s[i+2]||"x";if(isC(f)&&TF[f]!==undefined&&(g===undefined||LD.includes(g)||(isC(g)&&(VM.test(h)||LD.includes(h))))){fin=TF[f];i++}}
+  else if(!fin&&isC(f)&&TF[f]!==undefined){const a=s[i+1];if(a===undefined||isC(a)||LD.includes(a)){fin=TF[f];i++}}
+  o+=ini+v+fin+"'";
+ }return o}
+const DI={};"coat:コート card:カード note:ノート salad:サラダ bag:バッグ smoke:スモーク game:ゲーム tape:テープ case:ケース sports:スポーツ beer:ビール size:サイズ brake:ブレーキ europe:ヨーロッパ alice:アリス smith:スミス orange:オレンジ match:マッチ london:ロンドン washington:ワシントン doctor:ドクター speed:スピード spoon:スプーン group:グループ sauce:ソース road:ロード course:コース look:ルック head:ヘッド touch:タッチ show:ショー news:ニュース copy:コピー coffee:コーヒー apple:アップル butter:バター dress:ドレス chess:チェス kiss:キス miss:ミス camera:カメラ piano:ピアノ america:アメリカ book:ブック staff:スタッフ message:メッセージ watch:ウォッチ".split(" ").forEach(x=>{const[a,b]=x.split(":");DI[a]=b});
+function en(w){
+ w=w.toLowerCase().replace(/[^a-z]/g,"");if(DI[w])return DI[w];
+ const r=w.replace(/ation$/,"eeshon").replace(/otion$/,"ooshon").replace(/tion$/,"shon").replace(/(ire|yre)$/,"aiyaa")
+ .replace(/dge$/,"jji").replace(/ge$/,"ji").replace(/tch/g,"cchi")
+ .replace(/[aeiou]r(?![aeiou])/g,"aa").replace(/ee|ea/g,"ii").replace(/oo|ou/g,"uu").replace(/ai/g,"ee").replace(/oa|au/g,"oo")
+ .replace(/th/g,"s").replace(/ph/g,"f").replace(/ck/g,"k").replace(/c(?=[eiy])/g,"s").replace(/c(?![hc])/g,"k")
+ .replace(/q/g,"k").replace(/x/g,"ks").replace(/v/g,"b").replace(/l/g,"r")
+ .replace(/([aeiou])([^aeiou])e$/,(m,a,b)=>({a:"ee",e:"ii",i:"ai",o:"oo",u:"uu"}[a])+b)
+ .replace(/y$/,"ii").replace(/y(?![aeiou])/g,"i").replace(/ng/g,"Ng")
+ .replace(/(?<![aeiou])([aeiou])([ktpgd])$/,"$1$2$2");
+ return K(r)}
+function conv(){const co=$("co");co.innerHTML="";
+ $("ci").value.split(/\s+/).filter(Boolean).forEach(w=>{
+  const k=/[\u0e00-\u0e7f]/.test(w)?K(th(w)):en(w);
+  const d=document.createElement("div");d.className="o";
+  const a=document.createElement("span"),b=document.createElement("b");a.textContent=w;b.textContent=k;d.append(a,b);co.appendChild(d)})}
+function tab(n){$("quiz").style.display=n==1?"":"none";$("cv").style.display=n==2?"":"none";$("t1").classList.toggle("on",n==1);$("t2").classList.toggle("on",n==2)}
+$("t1").onclick=()=>tab(1);$("t2").onclick=()=>tab(2);$("ci").oninput=conv;
 build();
 </script></body></html>

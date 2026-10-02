@@ -36,6 +36,8 @@ button{font:inherit;color:var(--fg);border:1px solid #8886;background:var(--card
 .res ul{text-align:left;padding-left:20px;color:var(--mut)}
 .res button{margin:4px}
 select{font:inherit;color:var(--fg);background:var(--card);border:1px solid #8886;border-radius:999px;padding:7px 12px}
+rt{font-size:11px;color:var(--mut);font-weight:400;line-height:1;user-select:none}
+ruby{margin:0 1px}
 </style></head><body><div class="w">
 <h1>🇯🇵 N5 คันจิ & คำศัพท์</h1>
 <div class="bar"><select id="ff"></select></div>
@@ -177,6 +179,7 @@ let mode="kr",Q=[],i=0,sc=0,wr=[],lock=false;
 const $=id=>document.getElementById(id);
 const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 function say(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function furi(w,r){return (r&&r!==w&&/[\u4E00-\u9FAF]/.test(w))?'<ruby>'+w+'<rt>'+r+'</rt></ruby>':w}
 function start(list){
   const pool=M[mode][1];
   Q=list||sh(pool).slice(0,10);i=0;sc=0;wr=[];show();
@@ -184,23 +187,24 @@ function start(list){
 function show(){
   if(i>=Q.length)return end();
   const [nm,pool,qi,ai,cls]=M[mode],it=Q[i],ans=it[ai];
-  let o=sh(pool.filter(x=>x[ai]!==ans&&x!==it)).slice(0,3).map(x=>x[ai]);
-  o=sh(o.concat(ans));lock=false;
+  let opool=sh(pool.filter(x=>x[ai]!==ans&&x!==it)).slice(0,3);
+  opool=sh(opool.concat([it]));lock=false;
+  const qHtml=(mode==="kr")?it[qi]:(qi===0?furi(it[0],it[1]):it[qi]);
   $("app").innerHTML=`<div class="st"><span>ข้อ ${i+1}/${Q.length}</span><span>ถูก ${sc}</span></div>
   <div class="pg"><i style="width:${i/Q.length*100}%"></i></div>
-  <div class="q"><div class="${cls}">${it[qi]}</div><div class="r" id="rd"></div></div>
-  <div class="ch">${o.map((t,k)=>`<button data-k="${k}">${t}</button>`).join("")}</div>
+  <div class="q"><div class="${cls}">${qHtml}</div><div class="r" id="rd"></div></div>
+  <div class="ch">${opool.map((x,k)=>{const val=x[ai],disp=(ai===0)?furi(x[0],x[1]):val;return `<button data-k="${k}" data-val="${encodeURIComponent(val)}">${disp}</button>`}).join("")}</div>
   <button class="nx" id="nx">ข้อต่อไป →</button>`;
   document.querySelectorAll(".ch button").forEach(b=>b.onclick=()=>pick(b,ans,it));
   $("nx").onclick=()=>{i++;show()};
 }
 function pick(b,ans,it){
   if(lock)return;lock=true;
-  const ok=b.textContent===ans;
+  const ok=decodeURIComponent(b.dataset.val)===ans;
   if(ok)sc++;else wr.push(it);
   b.classList.add(ok?"ok":"bad");
-  document.querySelectorAll(".ch button").forEach(x=>{x.disabled=true;if(x.textContent===ans)x.classList.add("ok")});
-  $("rd").innerHTML=`${it[0]} 【${it[1]}】 ${it[2]} <button class="sp" style="display:inline-block" id="sp">🔊</button>`;
+  document.querySelectorAll(".ch button").forEach(x=>{x.disabled=true;if(decodeURIComponent(x.dataset.val)===ans)x.classList.add("ok")});
+  $("rd").innerHTML=`${furi(it[0],it[1])} — ${it[2]} <button class="sp" style="display:inline-block" id="sp">🔊</button>`;
   $("sp").onclick=()=>say(it[1]);
   $("nx").style.display="block";
   $("nx").textContent=i+1>=Q.length?"ดูผลลัพธ์":"ข้อต่อไป →";
@@ -209,7 +213,7 @@ function end(){
   let bs="";
   try{const k="n5best_"+mode,b=+localStorage.getItem(k)||0;if(sc>b){localStorage.setItem(k,sc);bs=" 🏆 สถิติใหม่!"}}catch(e){}
   $("app").innerHTML=`<div class="res"><div class="n">${sc}/${Q.length}</div><div>${bs}</div>
-  ${wr.length?`<p>ข้อที่ผิด</p><ul>${wr.map(x=>`<li>${x[0]} 【${x[1]}】 ${x[2]}</li>`).join("")}</ul>`:"<p>🎉 ถูกทั้งหมด!</p>"}
+  ${wr.length?`<p>ข้อที่ผิด</p><ul>${wr.map(x=>`<li>${furi(x[0],x[1])} — ${x[2]}</li>`).join("")}</ul>`:"<p>🎉 ถูกทั้งหมด!</p>"}
   <button id="a1">เล่นใหม่</button>${wr.length?'<button id="a2">ทบทวนข้อที่ผิด</button>':""}</div>`;
   $("a1").onclick=()=>start();
   if(wr.length)$("a2").onclick=()=>start(sh(wr));

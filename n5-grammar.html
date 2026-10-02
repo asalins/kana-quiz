@@ -37,6 +37,8 @@ select{font:inherit;color:var(--fg);background:var(--card);border:1px solid #888
 .res li{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #8883}
 .res .jp{font-family:var(--kf,"Klee One"),sans-serif;color:var(--fg);font-size:17px}
 .res button{margin:4px}
+rt{font-size:11px;color:var(--mut);font-weight:400;line-height:1;user-select:none}
+ruby{margin:0 1px}
 </style></head><body><div class="w">
 <h1>🇯🇵 N5 ไวยากรณ์ (เติมคำในช่องว่าง)</h1>
 <div class="bar"><select id="ff"></select></div>
@@ -109,6 +111,39 @@ o|音楽を聞き___、勉強します。|ながら|ながらに|ながらで|�
 o|すみません、ちょっと___。|お願いします|お願い|お願いだ|お願いの|0|お願いします ใช้พูดขอความช่วยเหลืออย่างสุภาพ
 o|これは何___作りますか。|で|に|と|の|0|で ใช้ถามถึงวัสดุหรือวิธีที่ใช้ทำสิ่งของ`);
 const CATS={all:"ทั้งหมด",p:"助詞 คำช่วย",v:"รูปกริยา/คุณศัพท์",o:"แบบแผนประโยค"};
+// furigana: word-compound overrides (irregular readings) + single-kanji fallback
+const WM=Object.fromEntries(`学校|がっこう
+一緒|いっしょ
+上手|じょうず
+手紙|てがみ
+二人|ふたり
+散歩|さんぽ
+日本|にほん
+日曜日|にちようび
+面白|おもしろ
+親切|しんせつ
+富士山|ふじさん
+友達|ともだち
+旅行|りょこう
+誕生日|たんじょうび
+明日|あした
+昨日|きのう
+辞書|じしょ`.split("\n").map(l=>l.split("|")));
+const CM=Object.fromEntries(`私わたし 学がく 生せい 明あ 日ひ 校こう 行い 朝あさ 食た 映えい 画が 見み 駅えき 歩ある 九きゅう 時じ 十じゅう 授じゅ 業ぎょう 傘かさ 誰だれ 来き 雨あめ 降ふ 机つくえ 上うえ 本ほん 三さん 冊さつ 名な 前まえ 何なに 電でん 車しゃ 会かい 社しゃ 公こう 園えん 家いえ 帰かえ 議ぎ 始はじ 先せん 質しつ 問もん 子こ 供ども 気き 消け 漢かん 字じ 分わ 聞き 遊あそ 高たか 木き 村むら 人ひと 料りょう 理り 母はは 試し 合あい 中ちゅう 止し 疲つか 早はや 寝ね 頭あたま 痛いた 薬くすり 飲の 後あと 音おん 楽がく 作つく 願ねが 持も 終お 窓まど 開あ 写しゃ 真しん 撮と 吸す 語ご 週しゅう 勉べん 強きょう 宿しゅく 題だい 起お 話はな 待ま 今いま 静しず 寒さむ 忙いそが 晴は 図と 書しょ 館かん`.split(/\s+/).map(w=>[w[0],w.slice(1)]));
+function furiText(s){
+  let out="",i=0;const isK=c=>/[\u4E00-\u9FAF]/.test(c);
+  while(i<s.length){
+    if(isK(s[i])){
+      let done=false;
+      for(let len=Math.min(4,s.length-i);len>=2;len--){
+        const sub=s.substr(i,len);
+        if(WM[sub]){out+='<ruby>'+sub+'<rt>'+WM[sub]+'</rt></ruby>';i+=len;done=true;break}
+      }
+      if(!done){const c=s[i];out+=CM[c]?('<ruby>'+c+'<rt>'+CM[c]+'</rt></ruby>'):c;i++}
+    }else{out+=s[i];i++}
+  }
+  return out;
+}
 const FF=["Klee One","Noto Sans JP","Noto Serif JP","Yuji Syuku","Kosugi Maru"];
 let cat="all",Q=[],i=0,sc=0,wr=[],lock=false;
 const $=id=>document.getElementById(id);
@@ -123,20 +158,19 @@ function show(){
   const [a,b]=it[1].split("___");
   $("app").innerHTML=`<div class="st"><span>ข้อ ${i+1}/${Q.length}</span><span>ถูก ${sc}</span></div>
   <div class="pg"><i style="width:${i/Q.length*100}%"></i></div>
-  <div class="q"><div class="tag">${CATS[it[0]]}</div><div class="sent">${a}<span class="bl">＿＿＿</span>${b}</div><div class="note" id="nt"></div></div>
-  <div class="ch">${opts.map((t,k)=>`<button data-k="${k}">${t}</button>`).join("")}</div>
+  <div class="q"><div class="tag">${CATS[it[0]]}</div><div class="sent">${furiText(a)}<span class="bl">＿＿＿</span>${furiText(b)}</div><div class="note" id="nt"></div></div>
+  <div class="ch">${opts.map((t,k)=>`<button data-k="${k}" data-val="${encodeURIComponent(t)}">${furiText(t)}</button>`).join("")}</div>
   <button class="nx" id="nx">ข้อต่อไป →</button>`;
   document.querySelectorAll(".ch button").forEach(b=>b.onclick=()=>pick(b,correctText,it));
   $("nx").onclick=()=>{i++;show()};
 }
 function pick(b,correctText,it){
   if(lock)return;lock=true;
-  const ok=b.textContent===correctText;
+  const ok=decodeURIComponent(b.dataset.val)===correctText;
   if(ok)sc++;else wr.push(it);
   b.classList.add(ok?"ok":"bad");
-  document.querySelectorAll(".ch button").forEach(x=>{x.disabled=true;if(x.textContent===correctText)x.classList.add("ok")});
-  const nt=$("nt");nt.style.display="block";nt.textContent="✅ "+it[1].replace("___",correctText)+"\n💡 "+it[7];
-  nt.style.whiteSpace="pre-line";
+  document.querySelectorAll(".ch button").forEach(x=>{x.disabled=true;if(decodeURIComponent(x.dataset.val)===correctText)x.classList.add("ok")});
+  const nt=$("nt");nt.style.display="block";nt.innerHTML="✅ "+furiText(it[1].replace("___",correctText))+"<br>💡 "+it[7];
   $("nx").style.display="block";
   $("nx").textContent=i+1>=Q.length?"ดูผลลัพธ์":"ข้อต่อไป →";
 }
@@ -144,7 +178,7 @@ function end(){
   let bs="";
   try{const k="n5gbest_"+cat,b=+localStorage.getItem(k)||0;if(sc>b){localStorage.setItem(k,sc);bs=" 🏆 สถิติใหม่!"}}catch(e){}
   $("app").innerHTML=`<div class="res"><div class="n">${sc}/${Q.length}</div><div>${bs}</div>
-  ${wr.length?`<p>ข้อที่ผิด</p><ul>${wr.map(x=>`<li><div class="jp">${x[1].replace("___",x[2+x[6]])}</div>${x[7]}</li>`).join("")}</ul>`:"<p>🎉 ถูกทั้งหมด!</p>"}
+  ${wr.length?`<p>ข้อที่ผิด</p><ul>${wr.map(x=>`<li><div class="jp">${furiText(x[1].replace("___",x[2+x[6]]))}</div>${x[7]}</li>`).join("")}</ul>`:"<p>🎉 ถูกทั้งหมด!</p>"}
   <button id="a1">เล่นใหม่</button>${wr.length?'<button id="a2">ทบทวนข้อที่ผิด</button>':""}</div>`;
   $("a1").onclick=start;
   if(wr.length)$("a2").onclick=()=>{Q=sh(wr);i=0;sc=0;wr=[];show()};

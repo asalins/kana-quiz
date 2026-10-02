@@ -34,8 +34,9 @@ select{font:inherit;color:var(--fg);background:var(--card);border:1px solid #888
 <div class="bar" id="mode"></div>
 <div class="bar">
 <select id="ff"></select>
-<span class="chip" id="dk">+ ตัวเติม ゛゜ (dakuten)</span>
-<span class="chip" id="yo">+ เสียงควบ ゃゅょ (yōon)</span>
+<span class="chip on" id="se">เสียงใส あ・か・さ</span>
+<span class="chip" id="dk">เสียงขุ่น が・ざ・ぱ</span>
+<span class="chip" id="yo">เสียงควบ きゃ・しゅ</span>
 <button id="rs">🔀 เริ่มใหม่ / สลับ</button>
 <button id="gv">💡 เฉลย</button>
 </div>
@@ -43,7 +44,7 @@ select{font:inherit;color:var(--fg);background:var(--card);border:1px solid #888
 <div class="prog"><i id="pg"></i></div>
 <div class="res" id="res"></div>
 <div class="grid" id="g"></div>
-<p style="color:var(--mut);font-size:13px">พิมพ์ตัวอ่านโรมาจิ เช่น ka, shi, kya (รับการสะกดหลายแบบ เช่น si/ti/tu/hu/sya) — ถูกแล้วจะเป็นสีเขียวและเลื่อนช่องถัดไปอัตโนมัติ<br>เปิด "เสียงควบ ゃゅょ" เพื่อฝึกเสียงผสม เช่น きゃ しゅ ちょ — เปิดคู่กับ "ตัวเติม ゛゜" เพื่อรวม ぎゃ じゅ びょ ปゃ ด้วย</p>
+<p style="color:var(--mut);font-size:13px">พิมพ์ตัวอ่านโรมาจิ เช่น ka, shi, kya (รับการสะกดหลายแบบ เช่น si/ti/tu/hu/sya) — ถูกแล้วจะเป็นสีเขียวและเลื่อนช่องถัดไปอัตโนมัติ<br>เลือกได้หลายปุ่มพร้อมกัน: "เสียงใส" คือ あ-ん พื้นฐาน, "เสียงขุ่น" คือ が ざ だ ば ぱ, "เสียงควบ" คือ きゃ しゅ ちょ — เปิด เสียงขุ่น+เสียงควบ พร้อมกันจะได้ ぎゃ じゅ びょ ぴゃ เพิ่มด้วย</p>
 </div>
 <script>
 const H="あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん".split("");
@@ -58,13 +59,14 @@ const AL={shi:["si"],chi:["ti"],tsu:["tu"],fu:["hu"],ji:["zi","di"],zu:["du"],wo
   sha:["sya"],shu:["syu"],sho:["syo"],cha:["tya"],chu:["tyu"],cho:["tyo"],ja:["zya","dya"],ju:["zyu","dyu"],jo:["zyo","dyo"]};
 const kt=s=>String.fromCharCode(s.charCodeAt(0)+0x60);
 const ktc=s=>[...s].map(kt).join("");
-let m="h",dk=false,yo=false,items=[],t0=0,tick=null,done=0,err=0;
+let m="h",se=true,dk=false,yo=false,items=[],t0=0,tick=null,done=0,err=0;
 const $=id=>document.getElementById(id);
 const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
-function bkey(){return "kbest_"+m+(dk?"d":"")+(yo?"y":"")}
+function bkey(){return "kbest_"+m+(se?"s":"")+(dk?"d":"")+(yo?"y":"")}
 function best(){try{return localStorage.getItem(bkey())}catch(e){return null}}
 function build(){
-  let a=H.map((c,i)=>[c,R[i]]);
+  let a=[];
+  if(se)a=a.concat(H.map((c,i)=>[c,R[i]]));
   if(dk)a=a.concat(HD.map((c,i)=>[c,RD[i]]));
   if(yo)a=a.concat(YO.map((c,i)=>[c,RYO[i]]));
   if(yo&&dk)a=a.concat(YD.map((c,i)=>[c,RYD[i]]));
@@ -121,8 +123,10 @@ $("gv").onclick=()=>{
   });clearInterval(tick);tick=null;
 };
 $("rs").onclick=build;
-$("dk").onclick=()=>{dk=!dk;$("dk").classList.toggle("on",dk);build()};
-$("yo").onclick=()=>{yo=!yo;$("yo").classList.toggle("on",yo);build()};
+function ensureOne(){if(!se&&!dk&&!yo){se=true;$("se").classList.add("on")}}
+$("se").onclick=()=>{se=!se;ensureOne();$("se").classList.toggle("on",se);build()};
+$("dk").onclick=()=>{dk=!dk;ensureOne();$("dk").classList.toggle("on",dk);build()};
+$("yo").onclick=()=>{yo=!yo;ensureOne();$("yo").classList.toggle("on",yo);build()};
 [["h","ひらがな"],["k","カタカナ"],["b","ผสมทั้งคู่"]].forEach(([k,l])=>{
   const b=document.createElement("span");b.className="chip"+(k==m?" on":"");b.textContent=l;
   b.onclick=()=>{m=k;document.querySelectorAll("#mode .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");build()};

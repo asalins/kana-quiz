@@ -42,6 +42,8 @@ button{font:inherit;color:var(--fg);border:1px solid #8886;background:var(--card
 .timer{font-weight:700}
 .timer.warn{color:var(--bad)}
 .hero{background:var(--card);border-radius:16px;padding:18px;text-align:center}
+rt{font-size:10px;color:var(--mut);font-weight:400;line-height:1;user-select:none}
+ruby{margin:0 1px}
 </style></head><body><div class="w">
 <h1>🇯🇵 N5 ฟัง & จำลองสอบ</h1>
 <div class="tabs"><button id="t1" class="on">🎧 ฝึกฟัง</button><button id="t2">📝 จำลองสอบ</button></div>
@@ -51,6 +53,45 @@ button{font:inherit;color:var(--fg);border:1px solid #8886;background:var(--card
 const $=id=>document.getElementById(id);
 const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 function speak(t,slow){try{const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";u.rate=slow?0.65:0.95;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+// furigana helpers
+function furi(w,r){return (r&&r!==w&&/[\u4E00-\u9FAF]/.test(w))?'<ruby>'+w+'<rt>'+r+'</rt></ruby>':w}
+const WM=Object.fromEntries(`学校|がっこう
+面白|おもしろ
+富士山|ふじさん
+旅行|りょこう
+来週|らいしゅう
+来月|らいげつ
+誕生日|たんじょうび
+明日|あした
+昨日|きのう
+日本|にほん
+辞書|じしょ
+台所|だいどころ
+大阪|おおさか
+一人|ひとり
+二人|ふたり
+家族|かぞく
+月曜日|げつようび
+銀行|ぎんこう
+名古屋|なごや
+兄弟|きょうだい
+今週|こんしゅう
+今月|こんげつ`.split("\n").map(l=>l.split("|")));
+const CM=Object.fromEntries(`私わたし 学がく 生せい 明あ 日ひ 校こう 行い 朝あさ 食た 図と 書しょ 館かん 勉べん 強きょう 同おな 色いろ 待ま 今いま 宿しゅく 題だい 映えい 画が 見み 飲の 本ほん 公こう 園えん 静しず 忙いそが 山やま 語ご 晴は 田た 中なか 毎まい 七しち 時じ 起お 雨あめ 傘かさ 持も 紅こう 茶ちゃ 病びょう 院いん 働はたら 月がつ 千せん 円えん 駅えき 歩ある 十じゅう 五ご 分ふん 八はち 母はは 料りょう 理り 電でん 車しゃ 京きょう 都と 兄あに 姉あね 寒さむ 着き 漢かん 字じ 読よ 六ろく 百ひゃく 万まん 四よん 東とう 古ふる 屋や 涼すず 曇くも 雪ゆき`.split(/\s+/).map(w=>[w[0],w.slice(1)]));
+function furiText(s){
+  let out="",i=0;const isK=c=>/[\u4E00-\u9FAF]/.test(c);
+  while(i<s.length){
+    if(isK(s[i])){
+      let done=false;
+      for(let len=Math.min(4,s.length-i);len>=2;len--){
+        const sub=s.substr(i,len);
+        if(WM[sub]){out+='<ruby>'+sub+'<rt>'+WM[sub]+'</rt></ruby>';i+=len;done=true;break}
+      }
+      if(!done){const c=s[i];out+=CM[c]?('<ruby>'+c+'<rt>'+CM[c]+'</rt></ruby>'):c;i++}
+    }else{out+=s[i];i++}
+  }
+  return out;
+}
 // ---- data ----
 const P=s=>s.trim().split("\n").map(l=>l.split("|"));
 // listening: speak(JP) | question(thai) | 4 choices | answerIndex | translation(thai)
@@ -106,7 +147,7 @@ const GR=P(`私___学生です。|は|を|に|で|0|は เป็นคำช่
 明日は晴れる___です。|でしょう|です|ます|だ|0|でしょう ใช้คาดเดา|พรุ่งนี้คงจะแดดออก
 これは日本語___辞書です。|の|な|に|と|0|の เชื่อมคำนามสองคำ|นี่คือพจนานุกรมภาษาญี่ปุ่น
 日本に___とき、富士山を見ました。|行った|行く|行って|行き|0|รูปอดีต + とき|ตอนที่ไปญี่ปุ่น ได้เห็นภูเขาฟูจิ`).map(a=>({type:"gram",sentence:a[0],ch:[a[1],a[2],a[3],a[4]],ans:+a[5],note:a[6],trans:a[7]}));
-const KVQ=KV.map(x=>({type:"kv",word:x.word,ans:x.mean,pool:KV.map(y=>y.mean).filter(m=>m!==x.mean)}));
+const KVQ=KV.map(x=>({type:"kv",word:x.word,read:x.read,ans:x.mean,pool:KV.map(y=>y.mean).filter(m=>m!==x.mean)}));
 // ---- listening tab ----
 let slow=false;
 function tabListen(){
@@ -123,7 +164,7 @@ function lshow(){
   const it=LQ[li],opts=sh(it.ch.map((t,k)=>[t,k===it.ans]));
   $("lst").innerHTML=`<div class="st"><span>ข้อ ${li+1}/${LQ.length}</span><span>ถูก ${lsc}</span></div>
   <div class="q"><button class="spk" id="pl">🔊 ฟังประโยค</button><div class="ques">${it.ques}</div><div class="note" id="nt"></div></div>
-  <div class="ch">${opts.map(([t],k)=>`<button data-k="${k}">${t}</button>`).join("")}</div>
+  <div class="ch">${opts.map(([t],k)=>`<button data-k="${k}" class="jp">${furiText(t)}</button>`).join("")}</div>
   <button class="nx" id="nx">ข้อต่อไป →</button>`;
   $("pl").onclick=()=>speak(it.speak,slow);
   speak(it.speak,slow);
@@ -131,7 +172,7 @@ function lshow(){
     if(b.disabled)return;
     const ok=opts[k][1];if(ok)lsc++;
     document.querySelectorAll(".ch button").forEach((x,j)=>{x.disabled=true;if(opts[j][1])x.classList.add("ok");else if(x===b)x.classList.add("bad")});
-    const nt=$("nt");nt.style.display="block";nt.innerHTML='<span class="jp">'+it.speak+'</span><br>🇹🇭 '+it.trans;
+    const nt=$("nt");nt.style.display="block";nt.innerHTML='<span class="jp">'+furiText(it.speak)+'</span><br>🇹🇭 '+it.trans;
     $("nx").style.display="block";
   });
   $("nx").onclick=()=>{li++;lshow()};
@@ -161,26 +202,29 @@ function mtick(){
 function mshow(){
   if(mi>=MQ.length)return mend();
   const it=MQ[mi];
-  let body="",opts=[];
+  let body="",opts=[],disp;
   if(it.type==="kv"){
     opts=sh([it.ans,...sh(it.pool).slice(0,3)]);
-    body=`<div class="tag">คำศัพท์/คันจิ</div><div class="sent jp" style="font-size:36px">${it.word}</div><div class="ques">ความหมายคืออะไร</div>`;
+    disp=t=>t;
+    body=`<div class="tag">คำศัพท์/คันจิ</div><div class="sent jp" style="font-size:36px">${furi(it.word,it.read)}</div><div class="ques">ความหมายคืออะไร</div>`;
   }else if(it.type==="gram"){
     opts=sh(it.ch);
+    disp=furiText;
     const [a,b]=it.sentence.split("___");
-    body=`<div class="tag">ไวยากรณ์</div><div class="sent jp">${a}<span class="bl">＿＿＿</span>${b}</div>`;
+    body=`<div class="tag">ไวยากรณ์</div><div class="sent jp">${furiText(a)}<span class="bl">＿＿＿</span>${furiText(b)}</div>`;
   }else{
     opts=sh(it.ch);
+    disp=furiText;
     body=`<div class="tag">ฟัง</div><button class="spk" id="pl">🔊 ฟังประโยค</button><div class="ques">${it.ques}</div>`;
   }
   $("app").innerHTML=`<div class="st"><span>ข้อ ${mi+1}/${MQ.length}</span><span class="timer" id="mtm">-</span></div>
   <div class="pg"><i style="width:${mi/MQ.length*100}%"></i></div>
   <div class="q">${body}</div>
-  <div class="ch">${opts.map((t,k)=>`<button data-k="${k}">${t}</button>`).join("")}</div>`;
+  <div class="ch">${opts.map((t,k)=>`<button data-k="${k}" data-val="${encodeURIComponent(t)}" class="jp">${disp(t)}</button>`).join("")}</div>`;
   mtick();
   if(it.type==="listen"){const p=$("pl");if(p)p.onclick=()=>speak(it.speak,false);speak(it.speak,false)}
   document.querySelectorAll(".ch button").forEach(b=>b.onclick=()=>{
-    const val=b.textContent,correct=it.type==="kv"?it.ans:(it.type==="gram"?it.ch[it.ans]:it.ch[it.ans]);
+    const val=decodeURIComponent(b.dataset.val),correct=it.type==="kv"?it.ans:it.ch[it.ans];
     if(val===correct)msc++;else mwr.push([it,correct]);
     mi++;mshow();
   });
@@ -189,8 +233,8 @@ function mend(){
   clearInterval(mTimer);
   $("app").innerHTML=`<div class="res"><div class="n">${msc}/${MQ.length}</div>
   ${mwr.length?`<p>เฉลยข้อที่ผิด (${mwr.length})</p><ul>${mwr.map(([it,c])=>{
-    const label=it.type==="kv"?(it.word+" → "+c):(it.type==="gram"?it.sentence.replace("___",c):(it.speak));
-    const extra=it.type==="gram"?("💡 "+it.note+(it.trans?("<br>🇹🇭 "+it.trans):"")):(it.type==="listen"?("Q: "+it.ques+" → "+c+(it.trans?("<br>🇹🇭 "+it.trans):"")):"");
+    const label=it.type==="kv"?(furi(it.word,it.read)+" — "+c):(it.type==="gram"?furiText(it.sentence.replace("___",c)):furiText(it.speak));
+    const extra=it.type==="gram"?("💡 "+it.note+(it.trans?("<br>🇹🇭 "+it.trans):"")):(it.type==="listen"?("Q: "+it.ques+" → "+furiText(c)+(it.trans?("<br>🇹🇭 "+it.trans):"")):"");
     return `<li><span class="jp">${label}</span>${extra?("<br>"+extra):""}</li>`;
   }).join("")}</ul>`:"<p>🎉 ถูกทั้งหมด!</p>"}
   <button id="ag">ทำชุดใหม่</button></div>`;
